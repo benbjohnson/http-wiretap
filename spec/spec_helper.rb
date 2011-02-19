@@ -6,10 +6,12 @@ require 'rubygems'
 require 'bundler/setup'
 require 'open-uri'
 require 'rspec'
+require 'mocha'
 require 'fakeweb'
+require 'unindentable'
 require 'http/wiretap'
 
 # Configure RSpec
 Rspec.configure do |c|
-  c.mock_with :rspec
+  c.mock_with :mocha
 end
