@@ -18,7 +18,7 @@ To install HTTP Wiretap, simply install the gem:
 
 And enable it within your application:
 
-	require 'http-wiretap'
+	require 'http/wiretap'
 	HTTP::Wiretap.start()
 
 And disable it when you're done:
