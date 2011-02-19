@@ -18,11 +18,11 @@ describe HTTP::Wiretap do
 
   it 'should log simple request' do
     request_file = mock()
-    request_file.expects(:write).with("GET /index.html HTTP/1.1\n")
-    request_file.expects(:write).with("Accept: */*\n")
-    request_file.expects(:write).with("Connection: close\n")
-    request_file.expects(:write).with("Host: localhost:8080\n")
-    request_file.expects(:write).with("\n")
+    request_file.expects(:write).with("GET /index.html HTTP/1.1\r\n")
+    request_file.expects(:write).with("Accept: */*\r\n")
+    request_file.expects(:write).with("Connection: close\r\n")
+    request_file.expects(:write).with("Host: localhost:8080\r\n")
+    request_file.expects(:write).with("\r\n")
     
     FileUtils.expects(:mkdir_p).with('http-log/raw/0')
     File.expects(:open).with('http-log/raw/0/request', 'w').yields(request_file)

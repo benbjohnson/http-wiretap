@@ -77,18 +77,18 @@ module HTTP
       # Write request to file
       File.open("#{dir}/request", 'w') do |file|
         # Write method and path
-        file.write("#{request.method} #{request.path} HTTP/1.1\n")
+        file.write("#{request.method} #{request.path} HTTP/1.1\r\n")
         
         # Write headers
         connection = *request.get_fields('Connection') || 'close'
         request.each_capitalized do |header_name, header_value|
           if header_name != 'Connection'
-            file.write("#{header_name}: #{header_value}\n")
+            file.write("#{header_name}: #{header_value}\r\n")
           end
         end
-        file.write("Connection: #{connection}\n")
-        file.write("Host: #{http.address}:#{http.port}\n")
-        file.write("\n")
+        file.write("Connection: #{connection}\r\n")
+        file.write("Host: #{http.address}:#{http.port}\r\n")
+        file.write("\r\n")
         
         # Write body
         file.write(request.body) unless request.body.nil?
