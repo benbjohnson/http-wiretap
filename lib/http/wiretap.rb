@@ -57,9 +57,9 @@ module HTTP
     
     # Logs a request's headers and body to a file. The file will be written to: 
     #
-    # <log_directory>/raw/<request_number>
+    # <log_directory>/raw/<request_number>/request
     #
-    # A symbolic link will be made from that directory to:
+    # A symbolic link will be made from that directory to the `host/` directory.
     #
     # @param [Net::HTTP] http  the object sending the request
     # @param [Net::HTTP::Request] request  the request being logged
@@ -92,6 +92,35 @@ module HTTP
         
         # Write body
         file.write(request.body) unless request.body.nil?
+      end
+    end
+
+    # Logs a response's headers and body to a file. The file will be written to: 
+    #
+    # <log_directory>/raw/<request_number>/response
+    #
+    # A symbolic link will be made from that directory to the `host/` directory.
+    #
+    # @param [Net::HTTP] http  the object sending the request
+    # @param [Net::HTTP::Request] request  the request being logged
+    # @param [Fixnum] request_id  the sequential identifier for the request
+    def self.log_response(http, response, request_id)
+      # Create log directory
+      dir = "#{log_directory}/raw/#{request_id}"
+      FileUtils.mkdir_p(dir)
+      
+      # Write response to file
+      File.open("#{dir}/response", 'w') do |file|
+        file.write("HTTP/#{response.http_version} #{response.code}\r\n")
+
+        # Write headers
+        response.each_capitalized do |header_name, header_value|
+          file.write("#{header_name}: #{header_value}\r\n")
+        end
+        file.write("\r\n")
+        
+        # Write body
+        file.write(response.body) unless response.body.nil?
       end
     end
   end

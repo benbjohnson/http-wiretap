@@ -7,9 +7,16 @@ describe HTTP::Wiretap do
 
   before do
     HTTP::Wiretap.restart()
-    
     @http = Net::HTTP.new('localhost', 8080);
+
+    FakeWeb.allow_net_connect = false
+    @fixtures_dir = File.join(File.dirname(File.expand_path(__FILE__)), 'fixtures')
   end
+
+  after do
+    FakeWeb.clean_registry
+  end
+
 
   def mock_file(contents)
     file = mock()
@@ -37,6 +44,10 @@ describe HTTP::Wiretap do
   # Tests
   ##############################################################################
 
+  #####################################
+  # Requests
+  #####################################
+  
   it 'should log simple request' do
     FileUtils.expects(:mkdir_p).with('http-log/raw/0')
     File.expects(:open).with('http-log/raw/0/request', 'w').yields empty_mock_file('/index.html')
@@ -95,6 +106,34 @@ describe HTTP::Wiretap do
     request = Net::HTTP::Post.new('/index.html')
     request.set_form_data({'foo' => 'bar'})
     HTTP::Wiretap.log_request(@http, request)
+  end
+  
+
+  #####################################
+  # Responses
+  #####################################
+  
+  it 'should log simple response' do
+    FakeWeb.register_uri(:get, "http://localhost:8080/index.html", :response => IO.read("#{@fixtures_dir}/simple_response"))
+    
+    FileUtils.expects(:mkdir_p).with('http-log/raw/0')
+    File.expects(:open).with('http-log/raw/0/response', 'w').yields mock_file(
+      <<-BLOCK.unindent
+        HTTP/1.1 200
+        Etag: "057d9941e52f7230977089c02f115bcb"
+        Server: nginx/0.7.67
+        Date: Thu, 06 Jan 2011 20:38:16 GMT
+        Content-Type: application/x-yaml; charset=utf-8
+        Status: 200 OK
+        Content-Length: 10
+        Cache-Control: private, max-age=0, must-revalidate
+
+        0123456789
+      BLOCK
+    )
+    
+    response = @http.request_get('/index.html')
+    HTTP::Wiretap.log_response(@http, response, 0)
   end
   
 end

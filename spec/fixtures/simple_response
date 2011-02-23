@@ -1,0 +1,10 @@
+HTTP/1.1 200 OK
+Server: nginx/0.7.67
+Date: Thu, 06 Jan 2011 20:38:16 GMT
+Content-Type: application/x-yaml; charset=utf-8
+Status: 200 OK
+ETag: "057d9941e52f7230977089c02f115bcb"
+Content-Length: 10
+Cache-Control: private, max-age=0, must-revalidate
+
+0123456789
