@@ -7,9 +7,9 @@ require 'bundler/setup'
 require 'open-uri'
 require 'rspec'
 require 'mocha'
-require 'fakeweb'
 require 'unindentable'
 require 'http/wiretap'
+require 'fakeweb'
 
 # Configure RSpec
 Rspec.configure do |c|

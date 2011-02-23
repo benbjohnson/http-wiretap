@@ -1,3 +1,9 @@
+dir = File.join(File.dirname(File.expand_path(__FILE__)), '..')
+$:.unshift(dir)
+
+require 'http/ext/net_http'
+require 'fileutils'
+
 module HTTP
   class Wiretap
     VERSION = '0.1.0'
@@ -41,6 +47,9 @@ module HTTP
       
       # Enable logging
       @enabled = true
+      
+      # Clear log directory
+      FileUtils.rm_rf(log_directory)
     end
 
     # Stops logging requests and responses.
@@ -72,7 +81,7 @@ module HTTP
       
       # Create log directory
       dir = "#{log_directory}/raw/#{request_id}"
-      FileUtils.mkdir_p(dir)
+      ::FileUtils.mkdir_p(dir)
       
       # Write request to file
       File.open("#{dir}/request", 'w') do |file|
@@ -93,6 +102,8 @@ module HTTP
         # Write body
         file.write(request.body) unless request.body.nil?
       end
+
+      return request_id
     end
 
     # Logs a response's headers and body to a file. The file will be written to: 
@@ -107,7 +118,8 @@ module HTTP
     def self.log_response(http, response, request_id)
       # Create log directory
       dir = "#{log_directory}/raw/#{request_id}"
-      FileUtils.mkdir_p(dir)
+      puts dir
+      ::FileUtils.mkdir_p(dir)
       
       # Write response to file
       File.open("#{dir}/response", 'w') do |file|
