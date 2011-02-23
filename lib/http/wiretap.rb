@@ -44,6 +44,8 @@ module HTTP
     def self.start()
       # Reset the sequential request identifier
       @next_id = 0
+      @host_request_paths = {}
+      @host_request_next_id = {}
       
       # Enable logging
       @enabled = true
@@ -75,16 +77,18 @@ module HTTP
     #
     # @return [Fixnum]  the sequential identifier for this request
     def self.log_request(http, request)
+      return unless @enabled
+      
       # Retrieve the request identifier
       request_id = @next_id
       @next_id += 1
       
-      # Create log directory
-      dir = "#{log_directory}/raw/#{request_id}"
-      ::FileUtils.mkdir_p(dir)
+      # Create raw log directory
+      raw_dir = "#{log_directory}/raw/#{request_id}"
+      ::FileUtils.mkdir_p(raw_dir)
       
       # Write request to file
-      File.open("#{dir}/request", 'w') do |file|
+      File.open("#{raw_dir}/request", 'w') do |file|
         # Write method and path
         file.write("#{request.method} #{request.path} HTTP/1.1\r\n")
         
@@ -102,6 +106,15 @@ module HTTP
         # Write body
         file.write(request.body) unless request.body.nil?
       end
+      
+      # Link to host-based log
+      host_request_name = "#{http.address}#{request.path}"
+      host_request_id = @host_request_next_id[host_request_name] ||= 0
+      @host_request_next_id[host_request_name] += 1
+      host_dir = "#{log_directory}/host/#{host_request_name}/#{host_request_id}"
+      @host_request_paths[request_id] = host_dir
+      ::FileUtils.mkdir_p(host_dir)
+      ::FileUtils.ln_s("#{raw_dir}/request", "#{host_dir}/request")
 
       return request_id
     end
@@ -116,13 +129,14 @@ module HTTP
     # @param [Net::HTTP::Request] request  the request being logged
     # @param [Fixnum] request_id  the sequential identifier for the request
     def self.log_response(http, response, request_id)
+      return unless @enabled
+
       # Create log directory
-      dir = "#{log_directory}/raw/#{request_id}"
-      puts dir
-      ::FileUtils.mkdir_p(dir)
+      raw_dir = "#{log_directory}/raw/#{request_id}"
+      ::FileUtils.mkdir_p(raw_dir)
       
       # Write response to file
-      File.open("#{dir}/response", 'w') do |file|
+      File.open("#{raw_dir}/response", 'w') do |file|
         file.write("HTTP/#{response.http_version} #{response.code}\r\n")
 
         # Write headers
@@ -134,6 +148,11 @@ module HTTP
         # Write body
         file.write(response.body) unless response.body.nil?
       end
+
+      # Link to host-based log
+      host_dir = @host_request_paths[request_id]
+      ::FileUtils.mkdir_p(host_dir)
+      ::FileUtils.ln_s("#{raw_dir}/response", "#{host_dir}/response")
     end
   end
 end

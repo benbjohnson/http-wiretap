@@ -50,6 +50,8 @@ describe HTTP::Wiretap do
   
   it 'should log simple request' do
     FileUtils.expects(:mkdir_p).with('http-log/raw/0')
+    FileUtils.expects(:mkdir_p).with('http-log/host/localhost/index.html/0')
+    FileUtils.expects(:ln_s).with('http-log/raw/0/request', 'http-log/host/localhost/index.html/0/request')
     File.expects(:open).with('http-log/raw/0/request', 'w').yields empty_mock_file('/index.html')
     
     request = Net::HTTP::Get.new('/index.html')
@@ -59,12 +61,18 @@ describe HTTP::Wiretap do
   it 'should log multiple requests' do
     FileUtils.expects(:mkdir_p).with('http-log/raw/0')
     File.expects(:open).with('http-log/raw/0/request', 'w').yields empty_mock_file('/index.html')
+    FileUtils.expects(:mkdir_p).with('http-log/host/localhost/index.html/0')
+    FileUtils.expects(:ln_s).with('http-log/raw/0/request', 'http-log/host/localhost/index.html/0/request')
     
     FileUtils.expects(:mkdir_p).with('http-log/raw/1')
     File.expects(:open).with('http-log/raw/1/request', 'w').yields empty_mock_file('/users')
+    FileUtils.expects(:mkdir_p).with('http-log/host/localhost/users/0')
+    FileUtils.expects(:ln_s).with('http-log/raw/1/request', 'http-log/host/localhost/users/0/request')
 
     FileUtils.expects(:mkdir_p).with('http-log/raw/2')
     File.expects(:open).with('http-log/raw/2/request', 'w').yields empty_mock_file('/users/0/edit')
+    FileUtils.expects(:mkdir_p).with('http-log/host/localhost/users/0/edit/0')
+    FileUtils.expects(:ln_s).with('http-log/raw/2/request', 'http-log/host/localhost/users/0/edit/0/request')
 
     HTTP::Wiretap.log_request(@http, Net::HTTP::Get.new('/index.html'))
     HTTP::Wiretap.log_request(@http, Net::HTTP::Get.new('/users'))
@@ -84,6 +92,8 @@ describe HTTP::Wiretap do
         
       BLOCK
     )
+    FileUtils.expects(:mkdir_p).with('http-log/host/localhost/index.html/0')
+    FileUtils.expects(:ln_s).with('http-log/raw/0/request', 'http-log/host/localhost/index.html/0/request')
     
     headers = {'Cache-Control' => 'no-cache', 'Content-Type' => 'text/plain'}
     HTTP::Wiretap.log_request(@http, Net::HTTP::Get.new('/index.html', headers))
@@ -102,6 +112,8 @@ describe HTTP::Wiretap do
         foo=bar
       BLOCK
     )
+    FileUtils.expects(:mkdir_p).with('http-log/host/localhost/index.html/0')
+    FileUtils.expects(:ln_s).with('http-log/raw/0/request', 'http-log/host/localhost/index.html/0/request')
     
     request = Net::HTTP::Post.new('/index.html')
     request.set_form_data({'foo' => 'bar'})
@@ -116,6 +128,16 @@ describe HTTP::Wiretap do
   it 'should log simple response' do
     FakeWeb.register_uri(:get, "http://localhost:8080/index.html", :response => IO.read("#{@fixtures_dir}/simple_response"))
     
+    # Mock request
+    FileUtils.expects(:mkdir_p).with('http-log/raw/0')
+    FileUtils.expects(:mkdir_p).with('http-log/host/localhost/index.html/0')
+    FileUtils.expects(:ln_s).with('http-log/raw/0/request', 'http-log/host/localhost/index.html/0/request')
+    File.expects(:open).with('http-log/raw/0/request', 'w').yields empty_mock_file('/index.html')
+    
+    request = Net::HTTP::Get.new('/index.html')
+    request_id = HTTP::Wiretap.log_request(@http, request)
+
+    # Mock response
     FileUtils.expects(:mkdir_p).with('http-log/raw/0')
     File.expects(:open).with('http-log/raw/0/response', 'w').yields mock_file(
       <<-BLOCK.unindent
@@ -131,9 +153,11 @@ describe HTTP::Wiretap do
         0123456789
       BLOCK
     )
+    FileUtils.expects(:mkdir_p).with('http-log/host/localhost/index.html/0')
+    FileUtils.expects(:ln_s).with('http-log/raw/0/response', 'http-log/host/localhost/index.html/0/response')
     
     response = @http.request_get('/index.html')
-    HTTP::Wiretap.log_response(@http, response, 0)
+    HTTP::Wiretap.log_response(@http, response, request_id)
   end
   
 end
