@@ -11,23 +11,67 @@ describe HTTP::Wiretap do
     @http = Net::HTTP.new('localhost', 8080);
   end
 
+  def mock_file(contents)
+    file = mock()
+    contents.each_line.each do |line|
+      file.expects(:write).with("#{line.chomp}\r\n")
+    end
+    return file
+  end
+  
+  def empty_mock_file(path)
+    mock_file(
+      "GET #{path} HTTP/1.1\n" +
+      "Accept: */*\n" +
+      "Connection: close\n" +
+      "Host: localhost:8080\n" +
+      "\n"
+    )
+  end
 
   ##############################################################################
   # Tests
   ##############################################################################
 
   it 'should log simple request' do
-    request_file = mock()
-    request_file.expects(:write).with("GET /index.html HTTP/1.1\r\n")
-    request_file.expects(:write).with("Accept: */*\r\n")
-    request_file.expects(:write).with("Connection: close\r\n")
-    request_file.expects(:write).with("Host: localhost:8080\r\n")
-    request_file.expects(:write).with("\r\n")
-    
     FileUtils.expects(:mkdir_p).with('http-log/raw/0')
-    File.expects(:open).with('http-log/raw/0/request', 'w').yields(request_file)
+    File.expects(:open).with('http-log/raw/0/request', 'w').yields empty_mock_file('/index.html')
     
     request = Net::HTTP::Get.new('/index.html')
     HTTP::Wiretap.log_request(@http, request)
   end
+  
+  it 'should log multiple requests' do
+    FileUtils.expects(:mkdir_p).with('http-log/raw/0')
+    File.expects(:open).with('http-log/raw/0/request', 'w').yields empty_mock_file('/index.html')
+    
+    FileUtils.expects(:mkdir_p).with('http-log/raw/1')
+    File.expects(:open).with('http-log/raw/1/request', 'w').yields empty_mock_file('/users')
+
+    FileUtils.expects(:mkdir_p).with('http-log/raw/2')
+    File.expects(:open).with('http-log/raw/2/request', 'w').yields empty_mock_file('/users/0/edit')
+
+    HTTP::Wiretap.log_request(@http, Net::HTTP::Get.new('/index.html'))
+    HTTP::Wiretap.log_request(@http, Net::HTTP::Get.new('/users'))
+    HTTP::Wiretap.log_request(@http, Net::HTTP::Get.new('/users/0/edit'))
+  end
+
+  it 'should log request headers' do
+    FileUtils.expects(:mkdir_p).with('http-log/raw/0')
+    File.expects(:open).with('http-log/raw/0/request', 'w').yields mock_file(
+      <<-BLOCK.unindent
+        GET /index.html HTTP/1.1
+        Accept: */*
+        Cache-Control: no-cache
+        Content-Type: text/plain
+        Connection: close
+        Host: localhost:8080
+        
+      BLOCK
+    )
+    
+    headers = {'Cache-Control' => 'no-cache', 'Content-Type' => 'text/plain'}
+    HTTP::Wiretap.log_request(@http, Net::HTTP::Get.new('/index.html', headers))
+  end
+  
 end

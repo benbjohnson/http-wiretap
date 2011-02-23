@@ -71,7 +71,7 @@ module HTTP
       @next_id += 1
       
       # Create log directory
-      dir = "#{log_directory}/raw/0"
+      dir = "#{log_directory}/raw/#{request_id}"
       FileUtils.mkdir_p(dir)
       
       # Write request to file
