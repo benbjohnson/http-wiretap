@@ -13,9 +13,13 @@ describe HTTP::Wiretap do
 
   def mock_file(contents)
     file = mock()
-    contents.each_line.each do |line|
+    contents.chomp!
+    headers, body = *contents.split("\n\n")
+    headers.each do |line|
       file.expects(:write).with("#{line.chomp}\r\n")
     end
+    file.expects(:write).with("\r\n")
+    file.expects(:write).with(body) unless body.nil?
     return file
   end
   
@@ -72,6 +76,25 @@ describe HTTP::Wiretap do
     
     headers = {'Cache-Control' => 'no-cache', 'Content-Type' => 'text/plain'}
     HTTP::Wiretap.log_request(@http, Net::HTTP::Get.new('/index.html', headers))
+  end
+  
+  it 'should log request body' do
+    FileUtils.expects(:mkdir_p).with('http-log/raw/0')
+    File.expects(:open).with('http-log/raw/0/request', 'w').yields mock_file(
+      <<-BLOCK.unindent
+        POST /index.html HTTP/1.1
+        Accept: */*
+        Connection: close
+        Host: localhost:8080
+        Content-Type: application/x-www-form-urlencoded
+        
+        foo=bar
+      BLOCK
+    )
+    
+    request = Net::HTTP::Post.new('/index.html')
+    request.set_form_data({'foo' => 'bar'})
+    HTTP::Wiretap.log_request(@http, request)
   end
   
 end
