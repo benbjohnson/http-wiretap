@@ -12,7 +12,19 @@ module Net
       end
       
       # Send request
-      response = request_without_wiretap(request, body, &block)
+      block_response = nil
+      block_wrapper = lambda do |res|
+        puts "inside: #{res}"
+        block_response = res
+        block.call(res) unless block.nil?
+        res
+      end
+      return_response = request_without_wiretap(request, body, &block_wrapper)
+      
+      # Use whichever 
+      response = nil
+      response = return_response if return_response.is_a?(Net::HTTPResponse)
+      response = block_response if response.nil?
 
       # Log response
       if ::HTTP::Wiretap.enabled
