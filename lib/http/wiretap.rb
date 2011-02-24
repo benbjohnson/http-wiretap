@@ -84,7 +84,7 @@ module HTTP
       @next_id += 1
       
       # Create raw log directory
-      raw_dir = "#{log_directory}/raw/#{request_id}"
+      raw_dir = File.expand_path("#{log_directory}/raw/#{request_id}")
       ::FileUtils.mkdir_p(raw_dir)
       
       # Write request to file
@@ -111,10 +111,10 @@ module HTTP
       host_request_name = "#{http.address}#{request.path}"
       host_request_id = @host_request_next_id[host_request_name] ||= 0
       @host_request_next_id[host_request_name] += 1
-      host_dir = "#{log_directory}/host/#{host_request_name}/#{host_request_id}"
+      host_dir = File.expand_path("#{log_directory}/host/#{host_request_name}/#{host_request_id}")
       @host_request_paths[request_id] = host_dir
       ::FileUtils.mkdir_p(host_dir)
-      ::FileUtils.ln_s("#{raw_dir}/request", "#{host_dir}/request")
+      ::FileUtils.ln_sf("#{raw_dir}/request", "#{host_dir}/request")
 
       return request_id
     end
@@ -132,7 +132,7 @@ module HTTP
       return unless @enabled
 
       # Create log directory
-      raw_dir = "#{log_directory}/raw/#{request_id}"
+      raw_dir = File.expand_path("#{log_directory}/raw/#{request_id}")
       ::FileUtils.mkdir_p(raw_dir)
       
       # Write response to file
@@ -152,7 +152,7 @@ module HTTP
       # Link to host-based log
       host_dir = @host_request_paths[request_id]
       ::FileUtils.mkdir_p(host_dir)
-      ::FileUtils.ln_s("#{raw_dir}/response", "#{host_dir}/response")
+      ::FileUtils.ln_sf("#{raw_dir}/response", "#{host_dir}/response")
     end
   end
 end

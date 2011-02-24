@@ -9,7 +9,6 @@ module Net
       # Log request
       if ::HTTP::Wiretap.enabled
         request_id = ::HTTP::Wiretap.log_request(self, request)
-        puts "req #{request_id}"
       end
       
       # Send request
