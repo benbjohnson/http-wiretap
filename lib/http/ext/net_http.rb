@@ -30,6 +30,8 @@ module Net
       if ::HTTP::Wiretap.enabled
         ::HTTP::Wiretap.log_response(self, response, request_id)
       end
+      
+      return response
     end
 
     alias_method :request_without_wiretap, :request
